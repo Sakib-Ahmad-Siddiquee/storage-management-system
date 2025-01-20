@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const crypto = require("crypto");
@@ -272,5 +273,72 @@ exports.changePassword = async (req, res) => {
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
     res.status(500).json({ error: "Error changing password", details: error });
+  }
+};
+
+// Instantiate the Google OAuth client with your Google client ID
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+exports.googleSignIn = async (req, res) => {
+  const { token } = req.body; // Google OAuth token from frontend
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID, // Your client ID from Google
+    });
+
+    const payload = ticket.getPayload();
+    const {
+      sub: googleId,
+      email,
+      given_name: firstName,
+      family_name: lastName,
+      picture,
+    } = payload;
+
+    // Check if user already exists, search by googleId or email
+    let user = await User.findOne({
+      $or: [{ googleId: googleId }, { email: email }],
+    });
+
+    if (!user) {
+      // If user doesn't exist, create a new one
+      user = new User({
+        googleId: googleId, // Store the Google ID
+        email: email, // Store the email
+        userName: email, // Use email as default username
+        name: `${firstName} ${lastName}`, // Store user's name
+        imageUrl: picture || "", // Store the profile picture if available
+      });
+
+      // Save the new user to the database
+      await user.save();
+    }
+
+    // Generate JWT for the logged-in user (optional for session)
+    const tokenResponse = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET, // Use your JWT_SECRET from .env
+      { expiresIn: "6h" } // Token expiry time
+    );
+
+    // Send the JWT and user data in response
+    res.status(200).json({
+      message: "User successfully signed in via Google",
+      token: tokenResponse, // Return the JWT token for session management
+      user: {
+        id: user._id,
+        userName: user.userName,
+        email: user.email,
+        name: user.name, // Return the user's full name
+        imageUrl: user.imageUrl, // Optional: user's profile image URL
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Google sign-in failed",
+      details: error.message,
+    });
   }
 };

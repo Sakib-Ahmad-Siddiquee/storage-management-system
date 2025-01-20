@@ -2,6 +2,10 @@ const express = require("express");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/authRoutes");
+const fileRoutes = require("./routes/fileRoutes");
+const folderRoutes = require("./routes/folderRoutes");
+const noteRoutes = require("./routes/noteRoutes");
+const favouriteRoutes = require("./routes/favouriteRoutes");
 
 const app = express();
 
@@ -13,6 +17,10 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/files", fileRoutes);
+app.use("/api/folders", folderRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/favourite", favouriteRoutes);
 
 // Connect to MongoDB
 mongoose

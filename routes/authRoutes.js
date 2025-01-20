@@ -9,6 +9,7 @@ const {
   deleteAccount,
   editProfile,
   changePassword,
+  googleSignIn,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const User = require("../models/userModel");
@@ -75,6 +76,8 @@ router.post("/verify-reset-code", verifyResetCode);
 router.delete("/delete-account", protect, deleteAccount);
 
 router.put("/edit-profile", protect, editProfile);
+
+router.post("/google-signin", googleSignIn);
 
 router.post(
   "/change-password",
