@@ -16,6 +16,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.get("/", (req, res) => {
+  res.status(200).send("Hello, welcome to the Storage Management System API!");
+});
 app.use("/api/auth", authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/folders", folderRoutes);
